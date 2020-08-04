@@ -24,7 +24,7 @@ import com.cts.assignment.repository.BillingRepository;
 public class BillingServiceImpl implements BillingService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BillingServiceImpl.class);
-	
+
 	@Autowired
 	private BillingRepository billingRepository;
 
@@ -35,40 +35,40 @@ public class BillingServiceImpl implements BillingService {
 	@Transactional
 	@CachePut(value = "billings", key = "#billing.billingid")
 	public Invoice generateInvoice(List<StockBean> list) throws StockNotFoundException, BillingException {
-		double billingAmount=0;
-		for(StockBean bean:list) {
+		double billingAmount = 0;
+		for (StockBean bean : list) {
 			Stock stock = stockService.getStockById(bean.getStockid());
 			LOGGER.info("Getting stock with ID {}.", bean.getStockid());
-			
-			if (stock == null || stock.getCostprice()<bean.getCount()) {
-				throw new BillingException("Stock "+bean.getStockid()+" is out of stock.");
+
+			if (stock == null || stock.getCostprice() < bean.getCount()) {
+				throw new BillingException("Stock " + bean.getStockid() + " is out of stock.");
 			}
-			billingAmount+=bean.getCount()*stock.getSellingprice();
-			
-			//update stock
-			stock.setCount(stock.getCount()-bean.getCount());
+			billingAmount += bean.getCount() * stock.getSellingprice();
+
+			// update stock
+			stock.setCount(stock.getCount() - bean.getCount());
 			stockService.updateStock(stock.getStockid(), stock);
 		}
-		
+
 		Invoice invoice = new Invoice();
 		invoice.setBillerid("Niraj");
 		invoice.setBillingamount(billingAmount);
 		Random r = new Random(100);
-		invoice.setCoustomerid("User"+r.nextInt());
-		
+		invoice.setCoustomerid("User" + r.nextInt());
+
 		billingRepository.save(invoice);
-		
+
 		return invoice;
 	}
-	
+
 	@Cacheable(value = "billings", key = "#billingid")
 	@Override
 	public Invoice getBillingById(String billingid) throws BillNotFoundException {
 		Invoice invoice = billingRepository.findById(billingid).get();
-		
-		if(invoice == null)
-			throw new BillNotFoundException(billingid +" doesn't exist");
-		
+
+		if (invoice == null)
+			throw new BillNotFoundException(billingid + " doesn't exist");
+
 		return invoice;
 
 	}
